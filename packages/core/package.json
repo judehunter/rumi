@@ -1,0 +1,65 @@
+{
+  "name": "@rumi/core",
+  "version": "0.0.0",
+  "description": "The CSS-in-JS library you've always wanted",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "types/index.d.ts",
+  "devDependencies": {},
+  "typesVersions": {
+    ">= 4.1": {
+      "*": [
+        "types/index.d.ts"
+      ]
+    }
+  },
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs",
+      "types": "./types/index.d.ts"
+    },
+    "./global": "./dist/index.global.js"
+  },
+  "files": [
+    "dist/*.cjs",
+    "dist/*.js",
+    "dist/*.map",
+    "dist/*.mjs",
+    "types/*.d.ts"
+  ],
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": "judehunter/rumi",
+  "contributors": [
+    "Jude Hunter <matisowagm@gmail.com>"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "css",
+    "css-in-js",
+    "global",
+    "javascript",
+    "js",
+    "scoped",
+    "style",
+    "styled",
+    "styles",
+    "stylesheet",
+    "stylesheets",
+    "theme",
+    "themes",
+    "theming",
+    "type",
+    "typed",
+    "types",
+    "ts",
+    "typescript"
+  ],
+  "dependencies": {
+    "@stitches/stringify": "1.2.1"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "name": "rumi",
+  "type": "module",
+  "license": "MIT",
+  "contributors": [
+    "Jude Hunter <matisowagm@gmail.com>"
+  ],
+  "scripts": {},
+  "workspaces": [
+    "packages/core"
+  ],
+  "devDependencies": {
+    "@types/node": "16.9.6",
+    "@typescript-eslint/eslint-plugin": "4.31.2",
+    "@typescript-eslint/parser": "4.31.2",
+    "eslint": "7.32.0",
+    "eslint-config-prettier": "8.3.0",
+    "eslint-plugin-prettier": "4.0.0",
+    "prettier": "2.4.1",
+    "typescript": "4.4.3"
+  },
+  "eslintConfig": {
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint",
+      "prettier"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended",
+      "prettier"
+    ],
+    "rules": {
+      "no-console": 1,
+      "prettier/prettier": 1,
+      "@typescript-eslint/explicit-module-boundary-types": 0
+    }
+  },
+  "prettier": {
+    "arrowParens": "always",
+    "bracketSpacing": false,
+    "printWidth": 240,
+    "quoteProps": "consistent",
+    "semi": true,
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "all"
+  },
+  "private": true
+}
