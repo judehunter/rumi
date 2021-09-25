@@ -17,10 +17,13 @@ type Media = Record<string, string>;
 type RumiConfig = {
   utils: Record<string, UtilFunction>;
   theme?: RumiTheme;
-  media: Media;
+  media?: Media;
+  prefix?: string;
 };
 
 type ID<T> = {[Prop in keyof T]: T[Prop]};
+
+let styleTag = '';
 
 export const createRumi = <T extends RumiConfig>(cfg: T) => {
   type CSS1 = ID<
@@ -29,6 +32,20 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     }
   >;
   type FinalCSS = ID<CSS1 & {[Prop in keyof T['media']]: Partial<CSS1>}>; // remove partial here and add deep partial elsewhere
+
+  const stylesheet = {};
+
+  const addToStylesheet = (hash: string, styleString: string) => {
+    stylesheet[hash] = styleString;
+
+    // do different things depending on the environment
+    // for now, assume env=browser
+    // const styleTag = document.head.querySelector('style[data-rumi]');
+    if (styleTag !== null)
+      styleTag += `
+        ${styleString}
+      `;
+  };
 
   const transformSpecialProperties = (styles: any) => {
     let newObj = {};
@@ -45,7 +62,9 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
         continue;
       }
 
-      let foundAtRule = Object.entries(cfg.media).find(([k]) => k === key)?.[1];
+      let foundAtRule = Object.entries(cfg.media ?? {}).find(
+        ([k]) => k === key,
+      )?.[1];
 
       if (foundAtRule) {
         foundAtRule = `@media ${foundAtRule}`;
@@ -64,19 +83,25 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
 
       newObj[key] = styles[key];
     }
-    // console.log(newObj);
 
     return newObj;
   };
 
   const css = (styles: Partial<FinalCSS>) => {
-    const hash = toHash(styles);
-    const transformed = transformSpecialProperties(styles);
-
-    const generatedCSS = stringify(transformed);
+    const className = `.${cfg.prefix ? cfg.prefix + '-' : ''}rumi-${toHash(
+      styles,
+    )}`;
+    if (!Object.keys(stylesheet).includes(className)) {
+      addToStylesheet(
+        className,
+        stringify({
+          [className]: transformSpecialProperties(styles),
+        }),
+      );
+    }
 
     const classNameGetter = () => {
-      return hash;
+      return className;
     };
     return classNameGetter;
   };
@@ -105,4 +130,3 @@ const button = css({
     },
   },
 });
-console.log(button());
