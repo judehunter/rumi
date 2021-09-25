@@ -2,10 +2,12 @@
   "name": "@rumi/core",
   "version": "0.0.0",
   "description": "The CSS-in-JS library you've always wanted",
-  "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "types/index.d.ts",
+  "scripts": {
+    "dev": "ts-node src/createRumi.ts"
+  },
   "devDependencies": {},
   "typesVersions": {
     ">= 4.1": {

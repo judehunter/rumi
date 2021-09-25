@@ -17,6 +17,7 @@
     "eslint-config-prettier": "8.3.0",
     "eslint-plugin-prettier": "4.0.0",
     "prettier": "2.4.1",
+    "ts-node": "10.2.1",
     "typescript": "4.4.3"
   },
   "eslintConfig": {
@@ -35,18 +36,20 @@
     "rules": {
       "no-console": 1,
       "prettier/prettier": 1,
-      "@typescript-eslint/explicit-module-boundary-types": 0
+      "@typescript-eslint/explicit-module-boundary-types": 0,
+      "@typescript-eslint/no-explicit-any": 0
     }
   },
   "prettier": {
     "arrowParens": "always",
     "bracketSpacing": false,
-    "printWidth": 240,
+    "printWidth": 80,
     "quoteProps": "consistent",
     "semi": true,
     "singleQuote": true,
     "tabWidth": 2,
-    "trailingComma": "all"
+    "trailingComma": "all",
+    "useTabs": false
   },
   "private": true
 }
