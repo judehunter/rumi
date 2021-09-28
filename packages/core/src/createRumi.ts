@@ -1,5 +1,6 @@
 import {stringify} from '@stitches/stringify';
 import {toHash} from './hash';
+import {all as mergeAll} from 'deepmerge';
 
 type CSSBaseStyles = {
   color: string;
@@ -23,28 +24,45 @@ type RumiConfig = {
 
 type ID<T> = {[Prop in keyof T]: T[Prop]};
 
-let styleTag = '';
-
 export const createRumi = <T extends RumiConfig>(cfg: T) => {
   type CSS1 = ID<
     CSSBaseStyles & {
       [Prop in keyof T['utils']]: Parameters<T['utils'][Prop]>[0];
     }
   >;
-  type FinalCSS = ID<CSS1 & {[Prop in keyof T['media']]: Partial<CSS1>}>; // remove partial here and add deep partial elsewhere
+  type StylesObject = ID<CSS1 & {[Prop in keyof T['media']]: Partial<CSS1>}>; // remove partial here and add deep partial elsewhere
 
-  const stylesheet = {};
+  type StylesPrimitive =
+    | null
+    | undefined
+    | boolean
+    | number
+    | string
+    | Partial<StylesObject>;
 
-  const addToStylesheet = (hash: string, styleString: string) => {
-    stylesheet[hash] = styleString;
+  type TOrArrayT<T> = T | T[];
+
+  let stylesheet = {};
+
+  const getCssText = ({reset = true} = {}) => {
+    const ret = Object.values(stylesheet).join('');
+    if (reset) stylesheet = {};
+    return ret;
+  };
+
+  const addToStylesheet = (hash: string, cssString: string) => {
+    stylesheet[hash] = cssString;
 
     // do different things depending on the environment
-    // for now, assume env=browser
-    // const styleTag = document.head.querySelector('style[data-rumi]');
-    if (styleTag !== null)
-      styleTag += `
-        ${styleString}
-      `;
+    if (globalThis.document) {
+      let styleTag = globalThis.document.head.querySelector('style[data-rumi]');
+      if (styleTag == null) {
+        styleTag = globalThis.document.createElement('style');
+        styleTag.setAttribute('data-rumi', 'true');
+      }
+
+      styleTag.appendChild(globalThis.document.createTextNode(cssString));
+    }
   };
 
   const transformSpecialProperties = (styles: any) => {
@@ -87,15 +105,30 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     return newObj;
   };
 
-  const css = (styles: Partial<FinalCSS>) => {
+  const mergeStyles = (styles: any[]) => {
+    return mergeAll(styles);
+  };
+
+  const css = (styles: TOrArrayT<StylesPrimitive>) => {
+    const enabledStyles = (Array.isArray(styles) ? styles : [styles]).filter(
+      (x) => x && x instanceof Object,
+    );
+
+    const transformedStyles = enabledStyles.map((x) =>
+      transformSpecialProperties(x),
+    );
+
+    const mergedStyles = mergeStyles(transformedStyles);
+
     const className = `.${cfg.prefix ? cfg.prefix + '-' : ''}rumi-${toHash(
-      styles,
+      mergedStyles,
     )}`;
+
     if (!Object.keys(stylesheet).includes(className)) {
       addToStylesheet(
         className,
         stringify({
-          [className]: transformSpecialProperties(styles),
+          [className]: mergedStyles,
         }),
       );
     }
@@ -106,10 +139,10 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     return classNameGetter;
   };
 
-  return {css};
+  return {css, getCssText};
 };
 
-const {css} = createRumi({
+const {css, getCssText} = createRumi({
   utils: {
     f: (value: {justify: 'center' | 'start'}) => ({
       display: 'flex',
@@ -122,11 +155,8 @@ const {css} = createRumi({
 });
 
 const button = css({
-  'color': 'red',
-  'f': {justify: 'center'},
-  '@bp1': {
-    f: {
-      justify: 'start',
-    },
-  },
+  color: 'red',
+  f: {justify: 'center'},
 });
+
+console.log(getCssText());

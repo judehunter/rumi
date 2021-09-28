@@ -62,6 +62,7 @@
     "typescript"
   ],
   "dependencies": {
-    "@stitches/stringify": "1.2.1"
+    "@stitches/stringify": "1.2.1",
+    "deepmerge": "4.2.2"
   }
 }
