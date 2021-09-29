@@ -1,18 +1,13 @@
 {
-  "compilerOptions": {
-    "target": "es2018",
-    "lib": ["es2019", "es5", "es6", "dom", "dom.iterable"],
-    "allowJs": true,
-    "esModuleInterop": true,
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "downlevelIteration": true,
-    "strict": true,
-    "noImplicitAny": false,
-    "allowSyntheticDefaultImports": true,
-    "declaration": true
-  },
-  "include": ["packages/**/*.ts", "packages/core/src/createRumi.ts"],
-  "exclude": ["node_modules"]
+  "references": [
+    {
+      "path": "./packages/core"
+    },
+    {
+      "path": "./packages/react"
+    }
+  ],
+  "files": [],
+  "include": [],
+  "exclude": ["**/node_modules"]
 }

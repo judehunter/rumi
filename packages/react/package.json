@@ -1,9 +1,9 @@
 {
-  "name": "@rumi/core",
+  "name": "@rumi/react",
   "version": "0.0.0",
   "description": "The CSS-in-JS library you've always wanted",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "types/index.d.ts",
   "scripts": {},
   "devDependencies": {},
   "license": "MIT",
@@ -36,7 +36,6 @@
     "typescript"
   ],
   "dependencies": {
-    "@stitches/stringify": "1.2.1",
-    "deepmerge": "4.2.2"
+    "@rumi/core": "0.0.0"
   }
 }

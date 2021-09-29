@@ -154,9 +154,19 @@ const {css, getCssText} = createRumi({
   },
 });
 
-const button = css({
+const button = css([
+  {
+    color: 'red',
+    f: {justify: 'center'},
+  },
+  false && {
+    color: 'violet',
+    f: {justify: 'start'},
+  },
+]);
+const button2 = css({
   color: 'red',
-  f: {justify: 'center'},
+  f: {justify: 'start'},
 });
 
 console.log(getCssText());
