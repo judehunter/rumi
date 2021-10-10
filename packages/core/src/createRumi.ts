@@ -25,12 +25,13 @@ type RumiConfig = {
 type ID<T> = {[Prop in keyof T]: T[Prop]};
 
 export const createRumi = <T extends RumiConfig>(cfg: T) => {
-  type CSS1 = ID<
-    CSSBaseStyles & {
-      [Prop in keyof T['utils']]: Parameters<T['utils'][Prop]>[0];
-    }
-  >;
-  type StylesObject = ID<CSS1 & {[Prop in keyof T['media']]: Partial<CSS1>}>; // remove partial here and add deep partial elsewhere
+  type StylesObject = CSSBaseStyles & {
+    [key: string]: string | Partial<StylesObject>;
+  } & {
+    [Prop in keyof T['utils']]: Parameters<T['utils'][Prop]>[0];
+  } & {
+    [Prop in keyof T['media']]: Partial<StylesObject>;
+  }; // remove partial here and add deep partial elsewhere
 
   type StylesPrimitive =
     | null
@@ -58,7 +59,9 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
       let styleTag = globalThis.document.head.querySelector('style[data-rumi]');
       if (styleTag == null) {
         styleTag = globalThis.document.createElement('style');
-        styleTag.setAttribute('data-rumi', 'true');
+        styleTag.setAttribute('data-rumi', '');
+
+        globalThis.document.head.appendChild(styleTag);
       }
 
       styleTag.appendChild(globalThis.document.createTextNode(cssString));
@@ -141,32 +144,3 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
 
   return {css, getCssText};
 };
-
-const {css, getCssText} = createRumi({
-  utils: {
-    f: (value: {justify: 'center' | 'start'}) => ({
-      display: 'flex',
-      justifyContent: value.justify,
-    }),
-  },
-  media: {
-    '@bp1': '(min-width: 500px)',
-  },
-});
-
-const button = css([
-  {
-    color: 'red',
-    f: {justify: 'center'},
-  },
-  false && {
-    color: 'violet',
-    f: {justify: 'start'},
-  },
-]);
-const button2 = css({
-  color: 'red',
-  f: {justify: 'start'},
-});
-
-console.log(getCssText());
