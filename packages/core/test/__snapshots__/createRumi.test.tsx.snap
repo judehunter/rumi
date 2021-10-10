@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`createRumi simple styles 1`] = `
+<div
+  className=".rumi-bzwKCF .rumi-bGYEiX"
+/>
+`;

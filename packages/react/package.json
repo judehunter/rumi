@@ -4,7 +4,9 @@
   "description": "The CSS-in-JS library you've always wanted",
   "main": "dist/index.js",
   "types": "types/index.d.ts",
-  "scripts": {},
+  "scripts": {
+    "compile": "tsc -b tsconfig.build.json"
+  },
   "devDependencies": {},
   "license": "MIT",
   "repository": "judehunter/rumi",
@@ -35,7 +37,7 @@
     "ts",
     "typescript"
   ],
-  "dependencies": {
+  "peerDependencies": {
     "@rumi/core": "0.0.0"
   }
 }

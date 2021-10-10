@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "commonjs",
+    "lib": ["esnext", "DOM"],
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "declaration": true,
+    "jsx": "react",
+
+    "strict": true,
+    "noImplicitAny": false,
+    "skipDefaultLibCheck": true
+  },
+  "exclude": ["**/dist", "**/node_modules"]
+}

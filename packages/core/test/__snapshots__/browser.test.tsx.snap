@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`browser simple styles 1`] = `"<style data-rumi=\\"\\">.rumi-dkEfkH{background-color:red;}.rumi-jKSHCh{background-color:violet;}</style>"`;

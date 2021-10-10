@@ -1,13 +1,9 @@
 {
-  "references": [
-    {
-      "path": "./packages/core"
-    },
-    {
-      "path": "./packages/react"
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "baseUrl": "./packages/",
+    "paths": {
+      "@rumi/*": ["*/src"]
     }
-  ],
-  "files": [],
-  "include": [],
-  "exclude": ["**/node_modules"]
+  }
 }
