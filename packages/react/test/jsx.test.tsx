@@ -1,0 +1,3 @@
+const Test = () => <div />;
+
+<Test  />;
