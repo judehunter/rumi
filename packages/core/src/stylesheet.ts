@@ -1,6 +1,6 @@
 let styleTag: HTMLStyleElement | null = null;
 
-const stylesheet: Record<string, {cssString: string; styles: any}> = {};
+let stylesheet: Record<string, {cssString: string; styles: any}> = {};
 
 export const isInStylesheet = (className: string) => {
   return Object.keys(stylesheet).includes(className);
@@ -23,4 +23,12 @@ export const addToStylesheet = (
 
     styleTag.appendChild(globalThis.document.createTextNode(cssString));
   }
+};
+
+export const getStylesheetCSSText = ({reset = true} = {}) => {
+  const ret = Object.values(stylesheet)
+    .map((x) => x.cssString)
+    .join('');
+  if (reset) stylesheet = {};
+  return ret;
 };

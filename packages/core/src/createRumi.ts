@@ -2,7 +2,11 @@ import {stringify} from '@stitches/stringify';
 import {toHash} from './hash';
 import {all as mergeAll} from 'deepmerge';
 import * as CSSType from 'csstype';
-import {addToStylesheet, isInStylesheet} from './stylesheet';
+import {
+  addToStylesheet,
+  getStylesheetCSSText,
+  isInStylesheet,
+} from './stylesheet';
 
 type CSSBaseStyles = Pick<
   CSSType.Properties,
@@ -52,16 +56,20 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
 
   type TOrArrayT<T> = T | T[];
 
-  let stylesheet = {} as Record<string, any>;
-
-  const getCssText = ({reset = true} = {}) => {
-    const ret = Object.values(stylesheet).join('');
-    if (reset) stylesheet = {};
-    return ret;
-  };
+  const getCssText = getStylesheetCSSText;
 
   const transformSpecialProperties = (styles: any) => {
     const newObj = {} as Record<string, any>;
+
+    // composition
+    if (styles.styles) return styles.styles;
+
+    // TODO:
+    // if (styles['&']) {
+    //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    //   const {'&': amp, ...rest} = styles;
+    //   styles = {...rest, ...styles['&']};
+    // }
 
     for (const key of Object.keys(styles)) {
       // console.log('key', key);
@@ -142,21 +150,25 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     return classes;
   };
 
-  const css = (styles: TOrArrayT<ShortCircuitStyles>) => {
+  const _css = (styles: TOrArrayT<ShortCircuitStyles>, virtual: boolean) => {
     const enabledStyles = (Array.isArray(styles) ? styles : [styles]).filter(
-      (x) => x && x instanceof Object,
+      (x): x is DeepPartial<StylesObject> => !!(x && x instanceof Object),
     );
 
     const transformedStyles = enabledStyles.map((x) =>
       transformSpecialProperties(x),
     );
 
-    const mergedStyles = mergeStyles(transformedStyles);
+    const mergedStyles: DeepPartial<StylesObject> =
+      mergeStyles(transformedStyles);
 
     const classes = generateClassNames(mergedStyles);
-    for (const [className, cssString] of Object.entries(classes)) {
-      if (!isInStylesheet(className)) {
-        addToStylesheet(className, cssString);
+
+    if (!virtual) {
+      for (const [className, cssString] of Object.entries(classes)) {
+        if (!isInStylesheet(className)) {
+          addToStylesheet(className, cssString);
+        }
       }
     }
 
@@ -165,9 +177,18 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
         .map((x) => x.slice(1))
         .join(' ');
     };
-    classNameGetter.styles = styles;
+    classNameGetter.styles = mergedStyles;
     return classNameGetter;
   };
+
+  const css = (styles: TOrArrayT<ShortCircuitStyles>) => _css(styles, false);
+  /**
+   * This method should be used for defining styles that should not be inserted
+   * into the actual stylesheet.
+   *
+   * That's useful for when you want to define a set of styles purely for composition
+   */
+  css.virtual = (styles: TOrArrayT<ShortCircuitStyles>) => _css(styles, true);
 
   return {css, getCssText};
 };
