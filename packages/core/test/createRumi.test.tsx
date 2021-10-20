@@ -6,12 +6,24 @@ describe('createRumi', () => {
   test('simple styles', () => {
     const {css} = createRumi({
       utils: {},
+      media: {
+        '@lg': '(min-width: 700px)',
+      },
     });
-    const cls1 = css({
-      bg: 'red',
-    });
+    const cls1 = css({});
     const cls2 = css({
-      bg: 'violet',
+      '@lg': {
+        'color': 'green',
+        '& > *': {
+          'color': 'red',
+          '& > *': {
+            'color': 'blue',
+            '@lg': {
+              color: 'green',
+            },
+          },
+        },
+      },
     });
 
     const tree = renderer

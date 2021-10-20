@@ -10,7 +10,8 @@
 
     "strict": true,
     "noImplicitAny": false,
-    "skipDefaultLibCheck": true
+    "skipDefaultLibCheck": true,
+    "exactOptionalPropertyTypes": true
   },
   "exclude": ["**/dist", "**/node_modules"]
 }

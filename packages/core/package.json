@@ -39,6 +39,7 @@
   ],
   "dependencies": {
     "@stitches/stringify": "1.2.1",
+    "csstype": "3.0.9",
     "deepmerge": "4.2.2"
   }
 }

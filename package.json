@@ -13,11 +13,12 @@
     "packages/react"
   ],
   "devDependencies": {
+    "@babel/preset-env": "7.15.8",
+    "@babel/preset-react": "7.14.5",
+    "@babel/preset-typescript": "7.15.0",
     "@types/jest": "27.0.2",
     "@types/jsdom": "16.2.13",
     "@types/node": "16.9.6",
-    "@types/react": "17.0.25",
-    "@types/react-test-renderer": "17.0.1",
     "@typescript-eslint/eslint-plugin": "4.31.2",
     "@typescript-eslint/parser": "4.31.2",
     "eslint": "7.32.0",
@@ -26,7 +27,6 @@
     "jest": "27.2.3",
     "jsdom": "17.0.0",
     "prettier": "2.4.1",
-    "react": "17.0.2",
     "react-test-renderer": "17.0.2",
     "ts-jest": "27.0.5",
     "ts-node": "10.2.1",

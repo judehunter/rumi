@@ -7,7 +7,10 @@
   "scripts": {
     "compile": "tsc -b tsconfig.build.json"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/react": "17.0.30",
+    "react": "17.0.2"
+  },
   "license": "MIT",
   "repository": "judehunter/rumi",
   "contributors": [
@@ -38,6 +41,7 @@
     "typescript"
   ],
   "peerDependencies": {
-    "@rumi/core": "0.0.0"
+    "@rumi/core": "0.0.0",
+    "react": ">=16.0.0"
   }
 }
