@@ -13,12 +13,12 @@ import {
 //   'display' | 'color' | 'backgroundColor'
 // >;
 type CSSBaseStyles = CSSType.Properties;
-type CSSPseudos = CSSType.AdvancedPseudos extends infer R
+type CSSPseudos = CSSType.Pseudos extends infer R
   ? R extends string
     ? `&${R}`
     : never
   : never;
-type CSSNested = CSSPseudos | '& *' | '& > *' | '& + *';
+type CSSNested = CSSPseudos | `& *` | '& > *' | '& + *' | `& ~ *`;
 
 type Contains<T extends string> = `${string}${T}${string}`;
 
@@ -49,6 +49,8 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
         [Prop in keyof T['utils']]?: Parameters<T['utils'][Prop]>[0];
       } & {
         [K in Contains<'&'>]?: StylesObject;
+      } & {
+        [K in CSSNested]?: StylesObject;
       })
     | {styles: StylesObject};
 
