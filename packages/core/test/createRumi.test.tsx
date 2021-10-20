@@ -88,8 +88,6 @@ describe('createRumi', () => {
         color: 'blue',
       },
     });
-    console.log(cls1.styles);
-    console.log(getCssText());
 
     expect((cls1.styles as any).color).toEqual('blue');
     expect(cls1().split(' ').length).toEqual(2);
@@ -162,6 +160,35 @@ describe('createRumi', () => {
       '&:hover': {
         color: 'blue',
         backgroundColor: 'green',
+      },
+    });
+  });
+
+  test('utils', () => {
+    const {css, getCssText} = createRumi({
+      utils: {
+        px: (v: string) => ({
+          paddingLeft: v,
+          paddingRight: v,
+        }),
+      },
+    });
+    getCssText();
+
+    const cls1 = css({
+      px: '10px',
+      '&:hover': {
+        px: '20px',
+      },
+      '& '
+    });
+
+    expect(cls1.styles as any).toEqual({
+      paddingLeft: '10px',
+      paddingRight: '10px',
+      '&:hover': {
+        paddingLeft: '20px',
+        paddingRight: '20px',
       },
     });
   });

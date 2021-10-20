@@ -14,7 +14,7 @@ The no-nonsense CSS-in-JS library for all of your needs. (WIP)
 
 📠 &nbsp; SSR integrations with support for streaming.
 
-⚛️ &nbsp; Fully typed CSS prop with a babel plugin for React.
+⚛️ &nbsp; Fully typed `css` prop with a babel plugin for React.
 
 🎨 &nbsp; Effortless theming for all of your sick dark mode fantasies.
 

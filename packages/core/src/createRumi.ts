@@ -8,15 +8,19 @@ import {
   isInStylesheet,
 } from './stylesheet';
 
-type CSSBaseStyles = Pick<
-  CSSType.Properties,
-  'display' | 'color' | 'backgroundColor'
->;
+// type CSSBaseStyles = Pick<
+//   CSSType.Properties,
+//   'display' | 'color' | 'backgroundColor'
+// >;
+type CSSBaseStyles = CSSType.Properties;
+type CSSPseudos = CSSType.AdvancedPseudos extends infer R
+  ? R extends string
+    ? `&${R}`
+    : never
+  : never;
+type CSSNested = CSSPseudos | '& *' | '& > *' | '& + *';
 
-type Contains<T extends string> =
-  | `${T}${string}`
-  | `${string}${T}${string}`
-  | `${string}${T}`;
+type Contains<T extends string> = `${string}${T}${string}`;
 
 type UtilFunction = (value: any) => Partial<CSSBaseStyles>;
 
@@ -39,10 +43,12 @@ type RumiClassNames = string & {__rumi_brand__: true};
 
 export const createRumi = <T extends RumiConfig>(cfg: T) => {
   type StylesObject =
-    | (CSSBaseStyles & {
-        [Prop in keyof T['media']]: StylesObject;
+    | (Partial<CSSBaseStyles> & {
+        [Prop in keyof T['media']]?: StylesObject;
       } & {
-        [K in Contains<'&'>]: StylesObject;
+        [Prop in keyof T['utils']]?: Parameters<T['utils'][Prop]>[0];
+      } & {
+        [K in Contains<'&'>]?: StylesObject;
       })
     | {styles: StylesObject};
 
@@ -52,14 +58,14 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     | boolean
     | number
     | string
-    | DeepPartial<StylesObject>;
+    | StylesObject;
 
   type TOrArrayT<T> = T | T[];
 
   const getCssText = getStylesheetCSSText;
 
   const transformSpecialProperties = (styles: any) => {
-    const newObj = {} as Record<string, any>;
+    let newObj = {} as Record<string, any>;
 
     // composition
     if (styles.styles) return styles.styles;
@@ -74,14 +80,14 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     for (const key of Object.keys(styles)) {
       // console.log('key', key);
 
-      // const foundUtilFunction = Object.entries(cfg.utils).find(
-      //   ([k]) => k === key,
-      // )?.[1];
+      const foundUtilFunction = Object.entries(cfg.utils).find(
+        ([k]) => k === key,
+      )?.[1];
 
-      // if (foundUtilFunction) {
-      //   newObj = {...newObj, ...foundUtilFunction(styles[key])};
-      //   continue;
-      // }
+      if (foundUtilFunction) {
+        newObj = {...newObj, ...foundUtilFunction(styles[key])};
+        continue;
+      }
 
       let foundAtRule = Object.entries(cfg.media ?? {}).find(
         ([k]) => k === key,
@@ -152,15 +158,14 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
 
   const _css = (styles: TOrArrayT<ShortCircuitStyles>, virtual: boolean) => {
     const enabledStyles = (Array.isArray(styles) ? styles : [styles]).filter(
-      (x): x is DeepPartial<StylesObject> => !!(x && x instanceof Object),
+      (x): x is StylesObject => !!(x && x instanceof Object),
     );
 
     const transformedStyles = enabledStyles.map((x) =>
       transformSpecialProperties(x),
     );
 
-    const mergedStyles: DeepPartial<StylesObject> =
-      mergeStyles(transformedStyles);
+    const mergedStyles: StylesObject = mergeStyles(transformedStyles);
 
     const classes = generateClassNames(mergedStyles);
 
