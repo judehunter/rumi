@@ -1,7 +1,18 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`createRumi simple styles 1`] = `
+exports[`createRumi atomic and whole classes 1`] = `
 <div
-  className=".rumi-bzwKCF .rumi-bGYEiX"
+  className="rumi-gmqXFB rumi-dhzjXW rumi-hPVfiJ"
 />
+`;
+
+exports[`createRumi one class 1`] = `
+Array [
+  <div
+    className="rumi-gmqXFB"
+  />,
+  <div
+    className="rumi-gmqXFB"
+  />,
+]
 `;

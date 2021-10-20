@@ -2,8 +2,12 @@ import {stringify} from '@stitches/stringify';
 import {toHash} from './hash';
 import {all as mergeAll} from 'deepmerge';
 import * as CSSType from 'csstype';
+import {addToStylesheet, isInStylesheet} from './stylesheet';
 
-type CSSBaseStyles = Pick<CSSType.Properties, 'display' | 'color'>;
+type CSSBaseStyles = Pick<
+  CSSType.Properties,
+  'display' | 'color' | 'backgroundColor'
+>;
 
 type Contains<T extends string> =
   | `${T}${string}`
@@ -27,15 +31,16 @@ export type RumiConfig = {
   prefix?: string;
 };
 
-type ID<T> = {[Prop in keyof T]: T[Prop]};
+type RumiClassNames = string & {__rumi_brand__: true};
 
 export const createRumi = <T extends RumiConfig>(cfg: T) => {
-  type StylesObject = CSSBaseStyles & {
-    [Prop in keyof T['media']]: StylesObject;
-  } & {
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    [K in Contains<'&'>]: StylesObject;
-  };
+  type StylesObject =
+    | (CSSBaseStyles & {
+        [Prop in keyof T['media']]: StylesObject;
+      } & {
+        [K in Contains<'&'>]: StylesObject;
+      })
+    | {styles: StylesObject};
 
   type ShortCircuitStyles =
     | null
@@ -53,23 +58,6 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     const ret = Object.values(stylesheet).join('');
     if (reset) stylesheet = {};
     return ret;
-  };
-
-  const addToStylesheet = (hash: string, cssString: string) => {
-    stylesheet[hash] = cssString;
-
-    // do different things depending on the environment
-    if (globalThis.document) {
-      let styleTag = globalThis.document.head.querySelector('style[data-rumi]');
-      if (styleTag == null) {
-        styleTag = globalThis.document.createElement('style');
-        styleTag.setAttribute('data-rumi', '');
-
-        globalThis.document.head.appendChild(styleTag);
-      }
-
-      styleTag.appendChild(globalThis.document.createTextNode(cssString));
-    }
   };
 
   const transformSpecialProperties = (styles: any) => {
@@ -116,6 +104,44 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     return mergeAll(styles);
   };
 
+  const generateClassNames = (styles: any) => {
+    const classes = {} as Record<string, string>;
+
+    // an object which is a subobject of styles, without the atomic styles
+    const whole = {} as any;
+    for (const [k, v] of Object.entries(styles)) {
+      // figure out if it's a special property or regular css
+      if (
+        ~k.indexOf('&') ||
+        Object.entries(cfg.media ?? {}).find(([k2]) => k === k2)
+      ) {
+        // preserve whole styles
+        whole[k] = v;
+      } else {
+        // break up into atomic styles
+        // and stringify into distinct classes
+        const atomicStyle = {
+          [k]: v,
+        };
+
+        const className = `.${cfg.prefix ? cfg.prefix + '-' : ''}rumi-${toHash(
+          atomicStyle,
+        )}`;
+        classes[className] = stringify({[className]: atomicStyle});
+      }
+    }
+
+    // stringify whole styles as one
+    if (Object.keys(whole).length) {
+      const className = `.${cfg.prefix ? cfg.prefix + '-' : ''}rumi-${toHash(
+        whole,
+      )}`;
+      classes[className] = stringify({[className]: whole});
+    }
+
+    return classes;
+  };
+
   const css = (styles: TOrArrayT<ShortCircuitStyles>) => {
     const enabledStyles = (Array.isArray(styles) ? styles : [styles]).filter(
       (x) => x && x instanceof Object,
@@ -127,22 +153,19 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
 
     const mergedStyles = mergeStyles(transformedStyles);
 
-    const className = `.${cfg.prefix ? cfg.prefix + '-' : ''}rumi-${toHash(
-      mergedStyles,
-    )}`;
-
-    if (!Object.keys(stylesheet).includes(className)) {
-      addToStylesheet(
-        className,
-        stringify({
-          [className]: mergedStyles,
-        }),
-      );
+    const classes = generateClassNames(mergedStyles);
+    for (const [className, cssString] of Object.entries(classes)) {
+      if (!isInStylesheet(className)) {
+        addToStylesheet(className, cssString);
+      }
     }
 
     const classNameGetter = () => {
-      return className;
+      return Object.keys(classes)
+        .map((x) => x.slice(1))
+        .join(' ');
     };
+    classNameGetter.styles = styles;
     return classNameGetter;
   };
 
