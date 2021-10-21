@@ -11,13 +11,12 @@ describe('@jsx', () => {
       .create(
         <section
           css={{
-            'color': 'red',
-            
+            color: 'red',
           }}
         />,
       )
       .toJSON();
 
-    console.log(tree);
+    expect((tree as any).props.className?.length).not.toEqual(0);
   });
 });

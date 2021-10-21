@@ -12,58 +12,74 @@ import {
 //   CSSType.Properties,
 //   'display' | 'color' | 'backgroundColor'
 // >;
-type CSSBaseStyles = CSSType.Properties;
-type CSSPseudos = CSSType.Pseudos extends infer R
+export type CSSBaseStyles = CSSType.Properties<
+  string | number,
+  string | number
+>;
+export type CSSPseudos = CSSType.SimplePseudos extends infer R
   ? R extends string
     ? `&${R}`
     : never
   : never;
-type CSSNested = CSSPseudos | `& *` | '& > *' | '& + *' | `& ~ *`;
+export type CSSNestedSelectors =
+  | CSSPseudos
+  | `& *`
+  | '& > *'
+  | '& + *'
+  | `& ~ *`;
 
-type Contains<T extends string> = `${string}${T}${string}`;
+export type Contains<T extends string> = `${string}${T}${string}`;
 
-type UtilFunction = (value: any) => Partial<CSSBaseStyles>;
+export type UtilFunction = (value: any) => Partial<CSSBaseStyles>;
 
-type RumiTheme = any;
+export type RumiTheme = any;
 
-type Media = Record<string, string>;
+export type Media = Record<string, string>;
 
-export type DeepPartial<T> = {
-  [P in keyof T]?: DeepPartial<T[P]>;
-};
+// eslint-disable-next-line @typescript-eslint/ban-types
+// type TryParameters<T> = T extends (args: infer R) => any ? R : [];
+
+export type StylesObject<T extends RumiConfig> =
+  | (Partial<CSSBaseStyles> & {
+      [Prop in keyof T['media']]?: StylesObject<T>;
+    } & {
+      [Prop in keyof T['utils']]?: T['utils'][Prop] extends (
+        ...args: any
+      ) => any
+        ? Parameters<T['utils'][Prop]>[0]
+        : never;
+    } & {
+      [K in Contains<'&'> | CSSNestedSelectors]?: StylesObject<T>;
+    } & {
+      [K in CSSNestedSelectors]?: StylesObject<T>;
+    })
+  | {styles: StylesObject<T>};
+
+export type ShortCircuitStyles<T extends RumiConfig> =
+  | null
+  | undefined
+  | boolean
+  | number
+  | string
+  | StylesObject<T>;
+
+export type TOrArrayT<T> = T | T[];
+
+// export type DeepPartial<T> = {
+//   [P in keyof T]?: DeepPartial<T[P]>;
+// };
 
 export type RumiConfig = {
-  utils: Record<string, UtilFunction>;
+  utils?: Record<string, UtilFunction>;
   theme?: RumiTheme;
   media?: Media;
   prefix?: string;
 };
 
-type RumiClassNames = string & {__rumi_brand__: true};
+// export type CreateRumi<T extends RumiConfig> =
+export type ID<T> = {[K in keyof T]: T[K]};
 
 export const createRumi = <T extends RumiConfig>(cfg: T) => {
-  type StylesObject =
-    | (Partial<CSSBaseStyles> & {
-        [Prop in keyof T['media']]?: StylesObject;
-      } & {
-        [Prop in keyof T['utils']]?: Parameters<T['utils'][Prop]>[0];
-      } & {
-        [K in Contains<'&'>]?: StylesObject;
-      } & {
-        [K in CSSNested]?: StylesObject;
-      })
-    | {styles: StylesObject};
-
-  type ShortCircuitStyles =
-    | null
-    | undefined
-    | boolean
-    | number
-    | string
-    | StylesObject;
-
-  type TOrArrayT<T> = T | T[];
-
   const getCssText = getStylesheetCSSText;
 
   const transformSpecialProperties = (styles: any) => {
@@ -82,7 +98,7 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     for (const key of Object.keys(styles)) {
       // console.log('key', key);
 
-      const foundUtilFunction = Object.entries(cfg.utils).find(
+      const foundUtilFunction = Object.entries(cfg.utils ?? {}).find(
         ([k]) => k === key,
       )?.[1];
 
@@ -158,16 +174,22 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     return classes;
   };
 
-  const _css = (styles: TOrArrayT<ShortCircuitStyles>, virtual: boolean) => {
+  const _css = (
+    styles: TOrArrayT<ShortCircuitStyles<T>>,
+    virtual: boolean,
+  ): {
+    (): string;
+    styles: StylesObject<T>;
+  } => {
     const enabledStyles = (Array.isArray(styles) ? styles : [styles]).filter(
-      (x): x is StylesObject => !!(x && x instanceof Object),
+      (x): x is StylesObject<T> => !!(x && x instanceof Object),
     );
 
     const transformedStyles = enabledStyles.map((x) =>
       transformSpecialProperties(x),
     );
 
-    const mergedStyles: StylesObject = mergeStyles(transformedStyles);
+    const mergedStyles: StylesObject<T> = mergeStyles(transformedStyles);
 
     const classes = generateClassNames(mergedStyles);
 
@@ -188,14 +210,15 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     return classNameGetter;
   };
 
-  const css = (styles: TOrArrayT<ShortCircuitStyles>) => _css(styles, false);
+  const css = (styles: TOrArrayT<ShortCircuitStyles<T>>) => _css(styles, false);
   /**
    * This method should be used for defining styles that should not be inserted
    * into the actual stylesheet.
    *
    * That's useful for when you want to define a set of styles purely for composition
    */
-  css.virtual = (styles: TOrArrayT<ShortCircuitStyles>) => _css(styles, true);
+  css.virtual = (styles: TOrArrayT<ShortCircuitStyles<T>>) =>
+    _css(styles, true);
 
   return {css, getCssText};
 };
