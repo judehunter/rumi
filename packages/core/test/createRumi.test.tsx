@@ -1,6 +1,7 @@
-import {createRumi} from '../src/createRumi';
 import renderer from 'react-test-renderer';
 import React from 'react';
+import {flushCache, createRumi} from '../src/index';
+import {cache} from '../src/stylesheet';
 
 describe('createRumi', () => {
   test('one class', () => {
@@ -197,5 +198,27 @@ describe('createRumi', () => {
         paddingRight: 20,
       },
     });
+  });
+
+  test('cache', () => {
+    const {css, getCssText} = createRumi({});
+    flushCache();
+    getCssText();
+
+    const cls1 = css({
+      color: 'red',
+    });
+
+    expect(cache).toHaveProperty('.' + cls1());
+
+    flushCache();
+
+    expect(cache).toEqual({});
+
+    css.virtual({
+      color: 'red',
+    });
+
+    expect(cache).toHaveProperty('.' + cls1());
   });
 });

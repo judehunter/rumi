@@ -2,11 +2,8 @@ import {stringify} from '@stitches/stringify';
 import {toHash} from './hash';
 import {all as mergeAll} from 'deepmerge';
 import * as CSSType from 'csstype';
-import {
-  addToStylesheet,
-  getStylesheetCSSText,
-  isInStylesheet,
-} from './stylesheet';
+import {addToStylesheetAndCache, getStylesheetCSSText} from './stylesheet';
+import {cache} from './stylesheet';
 
 // type CSSBaseStyles = Pick<
 //   CSSType.Properties,
@@ -40,7 +37,7 @@ export type Media = Record<string, string>;
 // type TryParameters<T> = T extends (args: infer R) => any ? R : [];
 
 export type StylesObject<T extends RumiConfig> =
-  | (Partial<CSSBaseStyles> & {
+  | ({[Prop in keyof CSSBaseStyles]?: CSSBaseStyles[Prop]} & {
       [Prop in keyof T['media']]?: StylesObject<T>;
     } & {
       [Prop in keyof T['utils']]?: T['utils'][Prop] extends (
@@ -159,7 +156,9 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
         const className = `.${cfg.prefix ? cfg.prefix + '-' : ''}rumi-${toHash(
           atomicStyle,
         )}`;
-        classes[className] = stringify({[className]: atomicStyle});
+        classes[className] = cache[className] ||= stringify({
+          [className]: atomicStyle,
+        });
       }
     }
 
@@ -168,7 +167,9 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
       const className = `.${cfg.prefix ? cfg.prefix + '-' : ''}rumi-${toHash(
         whole,
       )}`;
-      classes[className] = stringify({[className]: whole});
+      classes[className] = cache[className] ||= stringify({
+        [className]: whole,
+      });
     }
 
     return classes;
@@ -195,9 +196,7 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
 
     if (!virtual) {
       for (const [className, cssString] of Object.entries(classes)) {
-        if (!isInStylesheet(className)) {
-          addToStylesheet(className, cssString);
-        }
+        addToStylesheetAndCache(className, cssString);
       }
     }
 
