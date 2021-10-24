@@ -1,4 +1,6 @@
-# 🧶 rumi
+![logo](https://svgshare.com/i/bR9.svg)
+
+## 🧶 rumi
 
 The no-nonsense CSS-in-JS library for all of your needs. (WIP)
 
