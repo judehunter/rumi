@@ -1,12 +1,11 @@
-import {createRumi} from '../src/createRumi';
 import renderer from 'react-test-renderer';
 import React from 'react';
+import {flushCache, createRumi} from '../src/index';
+import {cache} from '../src/stylesheet';
 
 describe('createRumi', () => {
   test('one class', () => {
-    const {css, getCssText} = createRumi({
-      utils: {},
-    });
+    const {css, getCssText} = createRumi({});
     getCssText();
 
     const cls1 = css({
@@ -48,9 +47,7 @@ describe('createRumi', () => {
   });
 
   test('atomic and whole classes', () => {
-    const {css, getCssText} = createRumi({
-      utils: {},
-    });
+    const {css, getCssText} = createRumi({});
     getCssText();
 
     const cls1 = css({
@@ -73,9 +70,7 @@ describe('createRumi', () => {
   });
 
   test.skip('force whole classes', () => {
-    const {css, getCssText} = createRumi({
-      utils: {},
-    });
+    const {css, getCssText} = createRumi({});
     getCssText();
 
     const cls1 = css({
@@ -95,7 +90,10 @@ describe('createRumi', () => {
 
   test('composition', () => {
     const {css, getCssText} = createRumi({
-      utils: {},
+      media: {
+        '@lg': '(min-width: 1000px)',
+        '@md': '(min-width: 600px)',
+      },
     });
     getCssText();
 
@@ -107,6 +105,13 @@ describe('createRumi', () => {
       {
         backgroundColor: 'blue',
         '&:hover': cls1,
+        '@lg': cls1,
+        '@md': css.virtual([
+          cls1,
+          {
+            backgroundColor: 'yellow',
+          },
+        ]),
       },
     ]);
 
@@ -116,13 +121,18 @@ describe('createRumi', () => {
       '&:hover': {
         color: 'red',
       },
+      '@media (min-width: 1000px)': {
+        color: 'red',
+      },
+      '@media (min-width: 600px)': {
+        color: 'red',
+        backgroundColor: 'yellow',
+      },
     });
   });
 
   test('virtual styles', () => {
-    const {css, getCssText} = createRumi({
-      utils: {},
-    });
+    const {css, getCssText} = createRumi({});
     getCssText();
 
     const cls1 = css.virtual({
@@ -134,9 +144,7 @@ describe('createRumi', () => {
   });
 
   test('deep merging of styles', () => {
-    const {css, getCssText} = createRumi({
-      utils: {},
-    });
+    const {css, getCssText} = createRumi({});
     getCssText();
 
     const cls1 = css.virtual({
@@ -167,7 +175,7 @@ describe('createRumi', () => {
   test('utils', () => {
     const {css, getCssText} = createRumi({
       utils: {
-        px: (v: string) => ({
+        px: (v: string | number) => ({
           paddingLeft: v,
           paddingRight: v,
         }),
@@ -178,18 +186,44 @@ describe('createRumi', () => {
     const cls1 = css({
       px: '10px',
       '&:hover': {
-        px: '20px',
+        px: 20,
+        '& *': {
+          "& *": {
+            
+          }
+        }
       },
-      '& '
     });
 
     expect(cls1.styles as any).toEqual({
       paddingLeft: '10px',
       paddingRight: '10px',
       '&:hover': {
-        paddingLeft: '20px',
-        paddingRight: '20px',
+        paddingLeft: 20,
+        paddingRight: 20,
       },
     });
+  });
+
+  test('cache', () => {
+    const {css, getCssText} = createRumi({});
+    flushCache();
+    getCssText();
+
+    const cls1 = css({
+      color: 'red',
+    });
+
+    expect(cache).toHaveProperty('.' + cls1());
+
+    flushCache();
+
+    expect(cache).toEqual({});
+
+    css.virtual({
+      color: 'red',
+    });
+
+    expect(cache).toHaveProperty('.' + cls1());
   });
 });

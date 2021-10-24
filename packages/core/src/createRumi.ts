@@ -1,69 +1,65 @@
 import {stringify} from '@stitches/stringify';
 import {toHash} from './hash';
 import {all as mergeAll} from 'deepmerge';
-import * as CSSType from 'csstype';
-import {
-  addToStylesheet,
-  getStylesheetCSSText,
-  isInStylesheet,
-} from './stylesheet';
+import {addToStylesheetAndCache, getStylesheetCSSText} from './stylesheet';
+import {cache} from './stylesheet';
+import {StylesObject as StylesObjectWithoutMedia} from './csstype';
+import {TOrArrayT} from './utils';
+// import {CSSBaseStyles} from './csstype';
 
 // type CSSBaseStyles = Pick<
 //   CSSType.Properties,
 //   'display' | 'color' | 'backgroundColor'
 // >;
-type CSSBaseStyles = CSSType.Properties;
-type CSSPseudos = CSSType.Pseudos extends infer R
-  ? R extends string
-    ? `&${R}`
-    : never
-  : never;
-type CSSNested = CSSPseudos | `& *` | '& > *' | '& + *' | `& ~ *`;
 
-type Contains<T extends string> = `${string}${T}${string}`;
+export type UtilFunction = (value: any) => any;
 
-type UtilFunction = (value: any) => Partial<CSSBaseStyles>;
+export type RumiTheme = never;
 
-type RumiTheme = any;
+export type Media = Record<string, string>;
 
-type Media = Record<string, string>;
+// eslint-disable-next-line @typescript-eslint/ban-types
+// type TryParameters<T> = T extends (args: infer R) => any ? R : [];
 
-export type DeepPartial<T> = {
-  [P in keyof T]?: DeepPartial<T[P]>;
-};
+// export type StylesObject<T extends RumiConfig> =
+//   | ({[Prop in keyof CSSBaseStyles]?: CSSBaseStyles[Prop]} & {
+//       [Prop in keyof T['media']]?: StylesObject<T>;
+//     } & {
+//       [Prop in keyof T['utils']]?: T['utils'][Prop] extends (
+//         ...args: any
+//       ) => any
+//         ? Parameters<T['utils'][Prop]>[0]
+//         : never;
+//     } & {
+//       [K in Contains<'&'>]?: StylesObject<T>;
+//     } & {
+//       [K in keyof CSSNestedSelectors]?: StylesObject<T>;
+//     })
+//   | {styles: StylesObject<T>};
+
+export type ShortCircuitStyles<T extends RumiConfig> =
+  | null
+  | undefined
+  | boolean
+  | number
+  | string
+  | StylesObjectWithoutMedia<T>;
+
+// export type DeepPartial<T> = {
+//   [P in keyof T]?: DeepPartial<T[P]>;
+// };
 
 export type RumiConfig = {
-  utils: Record<string, UtilFunction>;
+  utils?: Record<string, UtilFunction>;
   theme?: RumiTheme;
   media?: Media;
   prefix?: string;
 };
 
-type RumiClassNames = string & {__rumi_brand__: true};
+// export type CreateRumi<T extends RumiConfig> =
+export type ID<T> = {[K in keyof T]: T[K]};
 
 export const createRumi = <T extends RumiConfig>(cfg: T) => {
-  type StylesObject =
-    | (Partial<CSSBaseStyles> & {
-        [Prop in keyof T['media']]?: StylesObject;
-      } & {
-        [Prop in keyof T['utils']]?: Parameters<T['utils'][Prop]>[0];
-      } & {
-        [K in Contains<'&'>]?: StylesObject;
-      } & {
-        [K in CSSNested]?: StylesObject;
-      })
-    | {styles: StylesObject};
-
-  type ShortCircuitStyles =
-    | null
-    | undefined
-    | boolean
-    | number
-    | string
-    | StylesObject;
-
-  type TOrArrayT<T> = T | T[];
-
   const getCssText = getStylesheetCSSText;
 
   const transformSpecialProperties = (styles: any) => {
@@ -82,7 +78,7 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     for (const key of Object.keys(styles)) {
       // console.log('key', key);
 
-      const foundUtilFunction = Object.entries(cfg.utils).find(
+      const foundUtilFunction = Object.entries(cfg.utils ?? {}).find(
         ([k]) => k === key,
       )?.[1];
 
@@ -91,16 +87,23 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
         continue;
       }
 
-      let foundAtRule = Object.entries(cfg.media ?? {}).find(
-        ([k]) => k === key,
-      )?.[1];
+      // let foundAtRule = Object.entries(cfg.media ?? {}).find(
+      //   ([k]) => k === key,
+      // )?.[1];
 
-      if (foundAtRule) {
-        foundAtRule = `@media ${foundAtRule}`;
-        newObj[foundAtRule] = styles[key];
-        if (newObj[foundAtRule] instanceof Object) {
-          newObj[foundAtRule] = transformSpecialProperties(newObj[foundAtRule]);
-        }
+      // if (foundAtRule) {
+      //   foundAtRule = `@media ${foundAtRule}`;
+      //   newObj[foundAtRule] = styles[key];
+      //   if (newObj[foundAtRule] instanceof Object) {
+      //     newObj[foundAtRule] = transformSpecialProperties(newObj[foundAtRule]);
+      //   }
+      //   continue;
+      // }
+
+      // nested properties
+      if (~key.indexOf('&') || ~key.indexOf('@')) {
+        newObj[key] = transformSpecialProperties(styles[key]);
+
         continue;
       }
 
@@ -117,7 +120,7 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
   };
 
   const mergeStyles = (styles: any[]) => {
-    return mergeAll(styles);
+    return mergeAll(styles) as any;
   };
 
   const generateClassNames = (styles: any) => {
@@ -143,7 +146,9 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
         const className = `.${cfg.prefix ? cfg.prefix + '-' : ''}rumi-${toHash(
           atomicStyle,
         )}`;
-        classes[className] = stringify({[className]: atomicStyle});
+        classes[className] = cache[className] ||= stringify({
+          [className]: atomicStyle,
+        });
       }
     }
 
@@ -152,30 +157,37 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
       const className = `.${cfg.prefix ? cfg.prefix + '-' : ''}rumi-${toHash(
         whole,
       )}`;
-      classes[className] = stringify({[className]: whole});
+      classes[className] = cache[className] ||= stringify({
+        [className]: whole,
+      });
     }
 
     return classes;
   };
 
-  const _css = (styles: TOrArrayT<ShortCircuitStyles>, virtual: boolean) => {
+  const _css = (
+    styles: TOrArrayT<ShortCircuitStyles<T>>,
+    virtual: boolean,
+  ): {
+    (): string;
+    styles: StylesObjectWithoutMedia<T>;
+  } => {
     const enabledStyles = (Array.isArray(styles) ? styles : [styles]).filter(
-      (x): x is StylesObject => !!(x && x instanceof Object),
+      (x): x is StylesObjectWithoutMedia<T> => !!(x && x instanceof Object),
     );
 
     const transformedStyles = enabledStyles.map((x) =>
       transformSpecialProperties(x),
     );
 
-    const mergedStyles: StylesObject = mergeStyles(transformedStyles);
+    const mergedStyles: StylesObjectWithoutMedia<T> =
+      mergeStyles(transformedStyles);
 
     const classes = generateClassNames(mergedStyles);
 
     if (!virtual) {
       for (const [className, cssString] of Object.entries(classes)) {
-        if (!isInStylesheet(className)) {
-          addToStylesheet(className, cssString);
-        }
+        addToStylesheetAndCache(className, cssString);
       }
     }
 
@@ -188,14 +200,23 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     return classNameGetter;
   };
 
-  const css = (styles: TOrArrayT<ShortCircuitStyles>) => _css(styles, false);
+  const css = (styles: TOrArrayT<ShortCircuitStyles<T>>) => _css(styles, false);
   /**
    * This method should be used for defining styles that should not be inserted
    * into the actual stylesheet.
    *
    * That's useful for when you want to define a set of styles purely for composition
    */
-  css.virtual = (styles: TOrArrayT<ShortCircuitStyles>) => _css(styles, true);
+  css.virtual = (styles: TOrArrayT<ShortCircuitStyles<T>>) =>
+    _css(styles, true);
 
-  return {css, getCssText};
+  const media = Object.fromEntries(
+    Object.entries(cfg.media ?? {}).map(([, v]) => [`@media ${v}`, v]),
+  ) as any as {
+    [K in keyof T['media']]: T['media'][K] extends string
+      ? `@media ${T['media'][K]}`
+      : never;
+  };
+
+  return {css, media, getCssText};
 };
