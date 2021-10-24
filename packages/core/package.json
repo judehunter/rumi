@@ -38,7 +38,7 @@
     "typescript"
   ],
   "dependencies": {
-    "@stitches/stringify": "1.2.1",
+    "@stitches/stringify": "1.2.5",
     "csstype": "3.0.9",
     "deepmerge": "4.2.2"
   }

@@ -62,18 +62,17 @@ export type ID<T> = {[K in keyof T]: T[K]};
 export const createRumi = <T extends RumiConfig>(cfg: T) => {
   const getCssText = getStylesheetCSSText;
 
-  const transformSpecialProperties = (styles: any) => {
+  const transformStyles = (styles: any) => {
     let newObj = {} as Record<string, any>;
 
     // composition
-    if (styles.styles) return styles.styles;
+    if (Array.isArray(styles)) {
+      return mergeStyles(styles.map((x) => transformStyles(x)));
+    }
 
-    // TODO:
-    // if (styles['&']) {
-    //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    //   const {'&': amp, ...rest} = styles;
-    //   styles = {...rest, ...styles['&']};
-    // }
+    if (styles.styles) {
+      return styles.styles;
+    }
 
     for (const key of Object.keys(styles)) {
       // console.log('key', key);
@@ -100,18 +99,18 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
       //   continue;
       // }
 
-      // nested properties
+      // nested selectors
       if (~key.indexOf('&') || ~key.indexOf('@')) {
-        newObj[key] = transformSpecialProperties(styles[key]);
+        newObj[key] = transformStyles(styles[key]);
 
         continue;
       }
 
-      if (styles[key] instanceof Object) {
-        newObj[key] = transformSpecialProperties(styles[key]);
+      // if (Array.isArray(styles[key])) {
+      //   newObj[key] = transformSpecialProperties(styles[key]);
 
-        continue;
-      }
+      //   continue;
+      // }
 
       newObj[key] = styles[key];
     }
@@ -122,6 +121,14 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
   const mergeStyles = (styles: any[]) => {
     return mergeAll(styles) as any;
   };
+
+  // fallbacks
+  const replacer = (property, value) =>
+    Array.isArray(value)
+      ? {
+          [property]: value.join(`;${property}:`),
+        }
+      : null;
 
   const generateClassNames = (styles: any) => {
     const classes = {} as Record<string, string>;
@@ -146,9 +153,12 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
         const className = `.${cfg.prefix ? cfg.prefix + '-' : ''}rumi-${toHash(
           atomicStyle,
         )}`;
-        classes[className] = cache[className] ||= stringify({
-          [className]: atomicStyle,
-        });
+        classes[className] = cache[className] ||= stringify(
+          {
+            [className]: atomicStyle,
+          },
+          replacer,
+        );
       }
     }
 
@@ -157,9 +167,12 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
       const className = `.${cfg.prefix ? cfg.prefix + '-' : ''}rumi-${toHash(
         whole,
       )}`;
-      classes[className] = cache[className] ||= stringify({
-        [className]: whole,
-      });
+      classes[className] = cache[className] ||= stringify(
+        {
+          [className]: whole,
+        },
+        replacer,
+      );
     }
 
     return classes;
@@ -176,14 +189,9 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
       (x): x is StylesObjectWithoutMedia<T> => !!(x && x instanceof Object),
     );
 
-    const transformedStyles = enabledStyles.map((x) =>
-      transformSpecialProperties(x),
-    );
+    const transformedStyles = transformStyles(enabledStyles);
 
-    const mergedStyles: StylesObjectWithoutMedia<T> =
-      mergeStyles(transformedStyles);
-
-    const classes = generateClassNames(mergedStyles);
+    const classes = generateClassNames(transformedStyles);
 
     if (!virtual) {
       for (const [className, cssString] of Object.entries(classes)) {
@@ -196,7 +204,8 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
         .map((x) => x.slice(1))
         .join(' ');
     };
-    classNameGetter.styles = mergedStyles;
+    classNameGetter.styles = transformedStyles;
+    classNameGetter.toString = () => classNameGetter();
     return classNameGetter;
   };
 
@@ -211,7 +220,7 @@ export const createRumi = <T extends RumiConfig>(cfg: T) => {
     _css(styles, true);
 
   const media = Object.fromEntries(
-    Object.entries(cfg.media ?? {}).map(([, v]) => [`@media ${v}`, v]),
+    Object.entries(cfg.media ?? {}).map(([k, v]) => [k, `@media ${v}`]),
   ) as any as {
     [K in keyof T['media']]: T['media'][K] extends string
       ? `@media ${T['media'][K]}`

@@ -89,11 +89,11 @@ describe('createRumi', () => {
   });
 
   test('composition', () => {
-    const {css, getCssText} = createRumi({
+    const {css, media, getCssText} = createRumi({
       media: {
-        '@lg': '(min-width: 1000px)',
-        '@md': '(min-width: 600px)',
-      },
+        lg: '(min-width: 1000px)',
+        md: '(min-width: 600px)',
+      } as const,
     });
     getCssText();
 
@@ -105,8 +105,8 @@ describe('createRumi', () => {
       {
         backgroundColor: 'blue',
         '&:hover': cls1,
-        '@lg': cls1,
-        '@md': css.virtual([
+        [media.lg]: cls1,
+        [media.md]: css.virtual([
           cls1,
           {
             backgroundColor: 'yellow',
@@ -187,11 +187,6 @@ describe('createRumi', () => {
       px: '10px',
       '&:hover': {
         px: 20,
-        '& *': {
-          "& *": {
-            
-          }
-        }
       },
     });
 
@@ -205,7 +200,7 @@ describe('createRumi', () => {
     });
   });
 
-  test('cache', () => {
+  test.skip('cache', () => {
     const {css, getCssText} = createRumi({});
     flushCache();
     getCssText();
@@ -225,5 +220,73 @@ describe('createRumi', () => {
     });
 
     expect(cache).toHaveProperty('.' + cls1());
+  });
+
+  test('advanced composition and fallbacks', () => {
+    const {css, getCssText} = createRumi({});
+    getCssText();
+
+    const colorRed = css.virtual({
+      color: ['red', '#ff0000', '#ff0000ff'],
+    });
+
+    const cls1 = css([
+      colorRed,
+      {
+        '& > *': {
+          color: 'pink',
+        },
+      },
+    ]);
+
+    const cls2 = css({
+      '&:hover': [
+        cls1,
+        {
+          '& > *': {
+            backgroundColor: 'green',
+          },
+        },
+      ],
+    });
+
+    expect(cls2.styles).toEqual({
+      '&:hover': {
+        color: ['red', '#ff0000', '#ff0000ff'],
+        '& > *': {
+          color: 'pink',
+          backgroundColor: 'green',
+        },
+      },
+    });
+
+    expect(getCssText()).toMatchInlineSnapshot(
+      `".rumi-jPBIFL{color:red;color:#ff0000;color:#ff0000ff;}.rumi-kLRtZQ > *{color:pink;}.rumi-gwqVvC:hover{color:red;color:#ff0000;color:#ff0000ff;}.rumi-gwqVvC:hover > *{color:pink;background-color:green;}"`,
+    );
+  });
+
+  test('target a rumi component', () => {
+    const {css, getCssText} = createRumi({});
+    getCssText();
+
+    const cls1 = css({
+      color: 'red',
+    });
+
+    const cls2 = css({
+      [`& .${cls1}`]: {
+        color: 'pink',
+      },
+    });
+
+    expect(cls2.styles).toEqual({
+      [`& .${cls1()}`]: {
+        color: 'pink',
+      },
+    });
+
+    expect(getCssText()).toMatchInlineSnapshot(
+      `".rumi-gmqXFB{color:red;}.rumi-dDoUWf .rumi-gmqXFB{color:pink;}"`,
+    );
   });
 });

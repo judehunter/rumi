@@ -1246,10 +1246,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@stitches/stringify@1.2.1":
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/@stitches/stringify/-/stringify-1.2.1.tgz#70a8300bd015ab423a6e8d577972288886074d62"
-  integrity sha512-05jEFzDnyBw7hp3Is6SONHNkqOBWJIwtZD190JneYwIU7UtZLCkRWPab7At2sfD9MKLmkaGbOksCGL0ugQG1Gg==
+"@stitches/stringify@1.2.5":
+  version "1.2.5"
+  resolved "https://registry.yarnpkg.com/@stitches/stringify/-/stringify-1.2.5.tgz#dfa6c88e708d3bef6beacbfd9a6708b02123b26f"
+  integrity sha512-UQzguM+5S6j1wPq3WKA9XrYJI0WOgZEMtUTYvUiDTDBciTa3SIt3ae2PBYKGQe+ZOkrdmonvhhmU3j7T3n5Mqg==
 
 "@tootallnate/once@1":
   version "1.1.2"
